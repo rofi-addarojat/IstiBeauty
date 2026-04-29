@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { articles as defaultArticles } from '../data/articles';
 
 export const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -418,6 +419,23 @@ export default function AdminDashboard() {
       setEditingArticleId(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `articles/${editingArticleId}`);
+    }
+  };
+
+  const seedArticles = async () => {
+    if (!window.confirm('Muat ulang artikel bawaan? Tindakan ini akan menambahkan artikel default ke database.')) return;
+    try {
+      for (const a of defaultArticles) {
+        await addDoc(collection(db, 'articles'), {
+          title: a.title,
+          category: a.category,
+          image: a.image,
+          content: a.content || 'Konten belum tersedia.'
+        });
+      }
+      alert('Berhasil memuat artikel bawaan.');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'articles');
     }
   };
 
@@ -940,6 +958,13 @@ export default function AdminDashboard() {
 
           {activeTab === 'articles' && (
              <div className="space-y-8">
+               <div className="bg-white p-6 rounded shadow-sm border border-gray-100 flex justify-between items-center">
+                 <h2 className="text-lg font-medium text-gray-900">Data Artikel</h2>
+                 <button onClick={seedArticles} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 border border-blue-200 rounded hover:bg-blue-100">
+                   Generate Artikel Bawaan
+                 </button>
+               </div>
+
                <div className="bg-white p-6 rounded shadow-sm border border-gray-100">
                  <h2 className="text-sm font-medium text-gray-900 mb-6 uppercase tracking-widest">Tambah Artikel Baru</h2>
                  <form onSubmit={addArticle} className="grid grid-cols-2 gap-4">
