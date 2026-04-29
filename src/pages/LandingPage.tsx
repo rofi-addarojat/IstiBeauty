@@ -107,8 +107,8 @@ export default function LandingPage() {
     <div className="min-h-screen selection:bg-pink-100 selection:text-pink-900">
       <nav aria-label="Navigasi Utama" className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex justify-between items-center">
-            <div className="font-serif text-2xl md:text-3xl font-medium tracking-wide text-[var(--color-brand-charcoal)]">
+          <div className="flex justify-between items-center gap-2">
+            <div className="font-serif text-xl md:text-3xl font-medium tracking-wide text-[var(--color-brand-charcoal)] truncate pr-2">
               {settings['logoName'] || 'Isti Beauty'}
             </div>
             <div className="hidden md:flex space-x-10">
@@ -118,7 +118,7 @@ export default function LandingPage() {
               <a href="#testimonials" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Testimoni</a>
             </div>
             <div>
-              <button onClick={handleConsultClick} className="bg-accent text-white px-7 py-3 rounded-full text-xs uppercase tracking-[0.15em] hover:bg-darkpink transition-all shadow-md shadow-pink-200">
+              <button onClick={handleConsultClick} className="bg-accent flex-shrink-0 text-white px-4 py-2 md:px-7 md:py-3 rounded-full text-[10px] md:text-xs uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-md shadow-pink-200 whitespace-nowrap">
                 Konsultasi
               </button>
             </div>
@@ -558,7 +558,7 @@ export default function LandingPage() {
       <section className="py-24 md:py-32 bg-white text-center px-6">
         <h2 className="font-serif text-4xl md:text-5xl mb-6 text-[var(--color-brand-charcoal)]">{settings['ctaTitle'] || 'Mulai Perjalanan Cantikmu'}</h2>
         <p className="text-[var(--color-brand-text-light)] mb-10 max-w-md mx-auto font-light">{settings['ctaDesc'] || 'Konsultasikan kebutuhan kulitmu dengan ahli kami secara gratis sekarang juga.'}</p>
-        <button onClick={handleConsultClick} className="bg-accent text-white px-10 py-5 rounded-full text-sm uppercase tracking-[0.15em] hover:bg-darkpink transition-all shadow-xl shadow-pink-200 hover:-translate-y-1">
+        <button onClick={handleConsultClick} className="bg-accent text-white px-6 py-4 md:px-10 md:py-5 rounded-full text-xs md:text-sm uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-xl shadow-pink-200 hover:-translate-y-1 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto break-words">
           {settings['ctaButton'] || 'Hubungi Admin Via WhatsApp'}
         </button>
       </section>
