@@ -107,18 +107,20 @@ export default function LandingPage() {
     <div className="min-h-screen selection:bg-pink-100 selection:text-pink-900">
       <nav aria-label="Navigasi Utama" className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex justify-between items-center gap-2">
-            <div className="font-serif text-xl md:text-3xl font-medium tracking-wide text-[var(--color-brand-charcoal)] truncate pr-2">
-              {settings['logoName'] || 'Isti Beauty'}
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="font-serif text-xl md:text-3xl font-medium tracking-wide text-[var(--color-brand-charcoal)] truncate">
+                {settings['logoName'] || 'Isti Beauty'}
+              </div>
             </div>
-            <div className="hidden md:flex space-x-10">
+            <div className="hidden md:flex space-x-10 flex-shrink-0">
               <a href="#home" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Home</a>
               <a href="#collection" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Koleksi</a>
               <a href="#tips" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Tips</a>
               <a href="#testimonials" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Testimoni</a>
             </div>
-            <div>
-              <button onClick={handleConsultClick} className="bg-accent flex-shrink-0 text-white px-4 py-2 md:px-7 md:py-3 rounded-full text-[10px] md:text-xs uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-md shadow-pink-200 whitespace-nowrap">
+            <div className="flex-shrink-0">
+              <button onClick={handleConsultClick} className="bg-accent text-white px-4 py-2 md:px-7 md:py-3 rounded-full text-[10px] md:text-xs uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-md shadow-pink-200 whitespace-nowrap">
                 Konsultasi
               </button>
             </div>
