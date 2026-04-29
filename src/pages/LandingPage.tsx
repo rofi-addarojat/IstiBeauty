@@ -299,7 +299,7 @@ export default function LandingPage() {
                 </div>
                 <div className="text-center px-4">
                   <p className="text-xs text-accent uppercase tracking-widest mb-2 font-medium">{product.category}</p>
-                  <h3 className="font-serif text-xl md:text-2xl mb-2 text-[var(--color-brand-charcoal)] group-hover:text-accent transition-colors">{product.name}</h3>
+               <h3 className="font-serif text-xl md:text-2xl mb-2 text-[var(--color-brand-charcoal)] group-hover:text-accent transition-colors">{product.name}</h3>
                   <p className="text-[var(--color-brand-charcoal)] tracking-wide font-light">Rp {product.price?.toLocaleString('id-ID')}</p>
                 </div>
               </motion.div>
@@ -321,15 +321,15 @@ export default function LandingPage() {
           <div className="relative rounded-[40px] overflow-hidden aspect-video shadow-2xl shadow-pink-100 group">
              <img src={settings['videoImage'] || "https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&q=80&w=1600"} alt="Isti Beauty Video" className="w-full h-full object-cover transition duration-1000 group-hover:scale-105" />
              {settings['videoUrl'] ? (
-               <a href={settings['videoUrl']} target="_blank" rel="noreferrer" className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
-                 <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
+               <a href={settings['videoUrl']} target="_blank" rel="noreferrer" aria-label="Tonton Video" className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
+                 <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
                    <Play className="text-white fill-current ml-2" size={40} />
                  </div>
                  <p className="text-white font-medium tracking-widest uppercase text-sm mt-8 drop-shadow-md">{settings['videoButton'] || 'Tonton Video Inspirasi Kami'}</p>
                </a>
              ) : (
                <div className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
-                 <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
+                 <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
                    <Play className="text-white fill-current ml-2" size={40} />
                  </div>
                  <p className="text-white font-medium tracking-widest uppercase text-sm mt-8 drop-shadow-md">{settings['videoButton'] || 'Tonton Video Inspirasi Kami'}</p>
@@ -451,7 +451,7 @@ export default function LandingPage() {
                 >
                   {testimonials.map((testi, idx) => (
                     <div key={testi.id} className="w-full flex-shrink-0 px-4">
-                      <div className="flex flex-col items-center bg-white p-8 md:p-14 rounded-[40px] shadow-[0_15px_50px_-12px_rgba(232,165,176,0.2)] border border-pink-50 relative h-full transition-all duration-300">
+                      <article className="flex flex-col items-center bg-white p-8 md:p-14 rounded-[40px] shadow-[0_15px_50px_-12px_rgba(232,165,176,0.2)] border border-pink-50 relative h-full transition-all duration-300">
                         <div className="flex text-accent mb-8 space-x-1">
                           {Array.from({length: testi.rating || 5}).map((_, i) => (
                             <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
@@ -459,7 +459,7 @@ export default function LandingPage() {
                         </div>
                         <p className="font-serif text-2xl md:text-3xl text-[var(--color-brand-charcoal)] mb-10 italic leading-relaxed text-center">"{testi.text}"</p>
                         <p className="text-sm uppercase tracking-[0.2em] text-accent font-semibold">— {testi.name}</p>
-                      </div>
+                      </article>
                     </div>
                   ))}
                 </div>
@@ -518,9 +518,18 @@ export default function LandingPage() {
                 key={idx} 
                 className={`bg-white rounded-2xl border ${activeFaq === idx ? 'border-pink-200 shadow-md shadow-pink-100/50' : 'border-white'} p-6 md:p-8 cursor-pointer transition-all duration-300`} 
                 onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
+                role="button"
+                aria-expanded={activeFaq === idx}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setActiveFaq(activeFaq === idx ? null : idx);
+                  }
+                }}
               >
                 <div className="flex justify-between items-center group">
-                  <h4 className="font-sans font-medium text-[var(--color-brand-charcoal)] group-hover:text-accent transition-colors pr-6">{faq.q}</h4>
+                  <h3 className="font-sans font-medium text-[var(--color-brand-charcoal)] group-hover:text-accent transition-colors pr-6 text-lg">{faq.q}</h3>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${activeFaq === idx ? 'bg-accent text-white' : 'bg-softpink text-accent'}`}>
                     <ChevronDown className={`transform transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} size={16} strokeWidth={2.5} />
                   </div>
