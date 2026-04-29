@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    
+    match /products/{productId} {
+      allow read: if true; // Public catalog
+      allow write: if isSignedIn(); // Admin only (any logged in user for this applet)
+    }
+    
+    match /settings/{settingId} {
+      allow read: if true; // Public settings
+      allow write: if isSignedIn();
+    }
+    
+    match /testimonials/{testimonialId} {
+      allow read: if true; // Public testimonials
+      allow write: if isSignedIn();
+    }
+
+    match /faqs/{faqId} {
+      allow read: if true; // Public FAQs
+      allow write: if isSignedIn();
+    }
+
+    match /articles/{articleId} {
+      allow read: if true; // Public articles
+      allow write: if isSignedIn();
+    }
+    
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
