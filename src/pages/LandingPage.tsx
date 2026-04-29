@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Leaf, ShieldCheck, HeartPulse, ChevronDown, Instagram, Play, X, ArrowRight, Facebook, Youtube, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Leaf, ShieldCheck, HeartPulse, ChevronDown, Instagram, Play, X, ArrowRight, Facebook, Youtube, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Link } from 'react-router-dom';
@@ -22,6 +22,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,20 +85,29 @@ export default function LandingPage() {
     { icon: ShieldCheck, title: settings['whyItem1Title'] || 'BPOM Approved' },
     { icon: Leaf, title: settings['whyItem2Title'] || 'Bahan Alami' },
     { icon: HeartPulse, title: settings['whyItem3Title'] || 'Cruelty-Free' },
-    { icon: CheckCircle2, title: settings['whyItem4Title'] || 'Konsultasi Ahli' },
+    { icon: CheckCircle2, title: settings['whyItem4Title'] || 'Pemesanan Mudah' },
   ];
 
   const displayFaqs = faqs.length > 0 ? faqs : [
     { q: 'Apakah produk Isti Beauty aman untuk kulit sensitif?', a: 'Ya, formulasi kami telah teruji iritasi dan minim bahan pemicu alergi, sangat cocok untuk kulit sensitif.' },
     { q: 'Bagaimana cara pengiriman produknya?', a: 'Kami bekerja sama dengan kurir terpercaya. Pesanan diproses H+1 setelah pembayaran dikonfirmasi.' },
-    { q: 'Bagaimana cara mendapatkan konsultasi gratis?', a: 'Anda dapat menekan tombol konsultasi di pojok kanan bawah yang mengarah ke WhatsApp Admin kami.' },
+    { q: 'Bagaimana cara memesan produk?', a: 'Anda dapat menekan tombol Beli Produk yang akan langsung terhubung ke WhatsApp Admin kami.' },
   ];
 
   const displayArticles = dbArticles.length > 0 ? dbArticles : articles;
 
   const handleConsultClick = () => {
+    const el = document.getElementById('collection');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleProductClick = (product: any, e?: React.MouseEvent) => {
+    // If they clicked the Shopee or Tokopedia links, handled elsewhere
     if (whatsappNumber) {
-      window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+      const message = `Halo Admin Isti Beauty, saya tertarik untuk membeli produk *${product.name}*. Apakah produk ini masih tersedia?`;
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       alert('Nomor WhatsApp belum dikonfigurasi oleh admin.');
     }
@@ -119,20 +129,46 @@ export default function LandingPage() {
               <a href="#tips" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Tips</a>
               <a href="#testimonials" className="text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-accent transition-colors">Testimoni</a>
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center gap-2 md:gap-0">
               <button onClick={handleConsultClick} className="bg-accent text-white px-4 py-2 md:px-7 md:py-3 rounded-full text-[10px] md:text-xs uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-md shadow-pink-200 whitespace-nowrap">
-                Konsultasi
+                Beli Produk
+              </button>
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                className="md:hidden text-[var(--color-brand-charcoal)] p-1 ml-1 hover:bg-pink-50 rounded-full transition-colors flex items-center justify-center"
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white/95 backdrop-blur-md border-t border-pink-50 overflow-hidden absolute top-full w-full left-0 shadow-lg"
+            >
+              <div className="flex flex-col px-6 py-6 space-y-6">
+                <a onClick={() => setIsMobileMenuOpen(false)} href="#home" className="text-sm uppercase tracking-widest text-[var(--color-brand-charcoal)] hover:text-accent transition-colors">Home</a>
+                <a onClick={() => setIsMobileMenuOpen(false)} href="#collection" className="text-sm uppercase tracking-widest text-[var(--color-brand-charcoal)] hover:text-accent transition-colors">Koleksi</a>
+                <a onClick={() => setIsMobileMenuOpen(false)} href="#tips" className="text-sm uppercase tracking-widest text-[var(--color-brand-charcoal)] hover:text-accent transition-colors">Tips</a>
+                <a onClick={() => setIsMobileMenuOpen(false)} href="#testimonials" className="text-sm uppercase tracking-widest text-[var(--color-brand-charcoal)] hover:text-accent transition-colors">Testimoni</a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       <main>
-      <section id="home" aria-label="Halaman Utama" className="relative pt-40 pb-20 md:pt-48 md:pb-32 px-6 lg:px-12 max-w-7xl mx-auto flex flex-col md:flex-row items-center overflow-hidden">
+      <section id="home" aria-label="Halaman Utama" className="relative pt-40 pb-20 md:pt-48 md:pb-32 px-6 lg:px-12 max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center overflow-hidden">
         <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-softpink rounded-full blur-3xl opacity-50 translate-x-1/3 -translate-y-1/4"></div>
 
-        <div className="md:w-[55%] pr-0 md:pr-16 z-10 text-center md:text-left">
+        <div className="w-full md:w-[55%] pr-0 md:pr-16 z-10 text-center md:text-left">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,7 +196,7 @@ export default function LandingPage() {
               Eksplor Koleksi
             </a>
             <button onClick={handleConsultClick} className="text-[var(--color-brand-charcoal)] px-8 py-4 rounded-full text-xs uppercase tracking-[0.15em] hover:bg-softpink transition-all w-full sm:w-auto text-center border border-gray-100">
-              Tanya Ahli
+              Beli Produk
             </button>
           </motion.div>
         </div>
@@ -259,10 +295,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="collection" className="py-24 md:py-32 max-w-7xl mx-auto px-6 lg:px-12 relative border-t border-pink-50">
+      <section id="collection" className="py-24 md:py-32 w-full max-w-7xl mx-auto px-6 lg:px-12 relative border-t border-pink-50 overflow-hidden">
         <div className="absolute left-0 top-1/2 -z-10 w-96 h-96 bg-softpink rounded-full blur-3xl opacity-40 -translate-x-1/2"></div>
         
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 md:mb-24">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 md:mb-24 gap-6 md:gap-0">
           <div className="text-left">
             <span className="text-accent text-xs uppercase tracking-[0.2em] font-medium mb-3 block">{settings['koleksiSubtitle'] || 'Etalase Kami'}</span>
             <h2 className="text-3xl md:text-5xl">{settings['koleksiTitle'] || 'Koleksi Eksklusif'}</h2>
@@ -277,7 +313,7 @@ export default function LandingPage() {
             Belum ada produk. Silakan tambahkan dari Admin Dashboard.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 sm:gap-y-16">
             {products.map((product, idx) => (
               <motion.div 
                 key={product.id}
@@ -286,16 +322,17 @@ export default function LandingPage() {
                 whileHover={{ y: -10 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
+                onClick={(e) => handleProductClick(product, e)}
                 className="group cursor-pointer flex flex-col p-5 rounded-[40px] hover:bg-white transition-all duration-300 hover:shadow-[0_20px_40px_-10px_rgba(232,165,176,0.3)]"
               >
-                <div className="relative overflow-hidden mb-6 bg-softpink aspect-[4/5] rounded-t-full rounded-bl-full flex items-center justify-center p-4">
-                  <img src={product.imageUrl || 'https://via.placeholder.com/400x500?text=No+Image'} alt={product.name} className="object-cover w-full h-full rounded-t-full rounded-bl-full transform group-hover:scale-105 transition duration-700 ease-out" />
-                  <div className="absolute inset-0 bg-white/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-500 flex flex-col items-center justify-center space-y-3 rounded-t-full rounded-bl-full">
+                <div className="relative overflow-hidden mb-6 bg-pink-50 aspect-[4/5] rounded-[2rem] sm:rounded-[3rem]">
+                  <img src={product.imageUrl || 'https://via.placeholder.com/400x500?text=No+Image'} alt={product.name} className="object-cover w-full h-full transform group-hover:scale-105 transition duration-700 ease-out" />
+                  <div className="absolute inset-0 bg-white/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-500 flex flex-col items-center justify-center space-y-3 p-4">
                     {product.shopeeLink && (
-                      <a href={product.shopeeLink} target="_blank" rel="noreferrer" className="bg-white text-[var(--color-brand-charcoal)] px-6 py-3 rounded-full text-xs uppercase tracking-[0.1em] hover:bg-accent hover:text-white transition shadow-sm w-40 text-center font-medium">Shopee</a>
+                      <a href={product.shopeeLink} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="bg-white text-[var(--color-brand-charcoal)] px-6 py-3 rounded-full text-xs uppercase tracking-[0.1em] hover:bg-accent hover:text-white transition shadow-sm w-40 text-center font-medium">Shopee</a>
                     )}
                     {product.tokpedLink && (
-                      <a href={product.tokpedLink} target="_blank" rel="noreferrer" className="bg-white text-[var(--color-brand-charcoal)] px-6 py-3 rounded-full text-xs uppercase tracking-[0.1em] hover:bg-accent hover:text-white transition shadow-sm w-40 text-center font-medium">Tokopedia</a>
+                      <a href={product.tokpedLink} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="bg-white text-[var(--color-brand-charcoal)] px-6 py-3 rounded-full text-xs uppercase tracking-[0.1em] hover:bg-accent hover:text-white transition shadow-sm w-40 text-center font-medium">Tokopedia</a>
                     )}
                   </div>
                 </div>
@@ -436,7 +473,7 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
-      <section id="testimonials" className="py-24 md:py-32 bg-white relative text-center">
+      <section id="testimonials" className="py-24 md:py-32 w-full bg-white relative text-center overflow-hidden">
         <div className="absolute right-0 top-1/4 -z-10 w-80 h-80 bg-softpink rounded-full blur-3xl opacity-50 translate-x-1/2"></div>
         <div className="max-w-4xl mx-auto px-6 lg:px-12 text-center">
           <span className="text-accent text-xs uppercase tracking-[0.2em] font-medium mb-3 block">{settings['testimoniSubtitle'] || 'Cerita Mereka'}</span>
@@ -559,9 +596,9 @@ export default function LandingPage() {
 
       <section className="py-24 md:py-32 bg-white text-center px-6">
         <h2 className="font-serif text-4xl md:text-5xl mb-6 text-[var(--color-brand-charcoal)]">{settings['ctaTitle'] || 'Mulai Perjalanan Cantikmu'}</h2>
-        <p className="text-[var(--color-brand-text-light)] mb-10 max-w-md mx-auto font-light">{settings['ctaDesc'] || 'Konsultasikan kebutuhan kulitmu dengan ahli kami secara gratis sekarang juga.'}</p>
+        <p className="text-[var(--color-brand-text-light)] mb-10 max-w-md mx-auto font-light">{settings['ctaDesc'] || 'Dapatkan produk original dan rasakan manfaatnya sekarang juga.'}</p>
         <button onClick={handleConsultClick} className="bg-accent text-white px-6 py-4 md:px-10 md:py-5 rounded-full text-xs md:text-sm uppercase tracking-widest md:tracking-[0.15em] hover:bg-darkpink transition-all shadow-xl shadow-pink-200 hover:-translate-y-1 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto break-words">
-          {settings['ctaButton'] || 'Hubungi Admin Via WhatsApp'}
+          {settings['ctaButton'] || 'Beli Produk Sekarang'}
         </button>
       </section>
       </main>
@@ -616,7 +653,7 @@ export default function LandingPage() {
               <ul className="space-y-4 font-light text-[var(--color-brand-charcoal)]/80">
                 <li>Senin - Jumat</li>
                 <li>Pukul 09:00 - 17:00 WIB</li>
-                {whatsappNumber && <li className="pt-2"><a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-4">Konsultasi WA</a></li>}
+                {whatsappNumber && <li className="pt-2"><a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-4">Order Via WA</a></li>}
               </ul>
             </div>
           </div>
