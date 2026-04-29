@@ -104,7 +104,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen selection:bg-pink-100 selection:text-pink-900">
+    <div className="min-h-screen selection:bg-pink-100 selection:text-pink-900 overflow-x-hidden">
       <nav aria-label="Navigasi Utama" className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="flex justify-between items-center gap-4">
