@@ -23,6 +23,7 @@ export default function LandingPage() {
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,6 +46,27 @@ export default function LandingPage() {
         newSettings[doc.id] = doc.data().value;
       });
       setSettings(newSettings);
+
+      if (newSettings['logoName']) document.title = newSettings['logoName'];
+      
+      let link = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+      if (!link) {
+        link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      }
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      if (newSettings['faviconUrl']) {
+        link.href = newSettings['faviconUrl'];
+      }
+      if (newSettings['ogImageUrl']) {
+        const ogImage = document.getElementById("og-image") as HTMLMetaElement;
+        if (ogImage) ogImage.content = newSettings['ogImageUrl'];
+        const twitterImage = document.getElementById("twitter-image") as HTMLMetaElement;
+        if (twitterImage) twitterImage.content = newSettings['ogImageUrl'];
+      }
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'settings'));
 
     const qTestimonials = query(collection(db, 'testimonials'));
@@ -209,6 +231,7 @@ export default function LandingPage() {
           >
              <div className="absolute inset-0 bg-softpink rounded-[40px] rotate-6 transform scale-105 -z-10"></div>
              <img 
+               loading="lazy"
                src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800" 
                alt="Isti Beauty Skincare" 
                className="w-full h-full object-cover rounded-[40px] shadow-2xl shadow-pink-100 border-4 border-white" 
@@ -289,7 +312,7 @@ export default function LandingPage() {
             </div>
             <div className="md:w-1/2 relative">
                 <div className="absolute inset-0 bg-accent rounded-[40px] rotate-3 transform scale-105 -z-10 opacity-20"></div>
-                <img src={settings['manfaatImage'] || "https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&q=80&w=800"} alt="Manfaat Skincare" className="rounded-[40px] shadow-2xl shadow-pink-100 w-full object-cover aspect-[4/5] border-4 border-white" />
+                <img loading="lazy" src={settings['manfaatImage'] || "https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&q=80&w=800"} alt="Manfaat Skincare" className="rounded-[40px] shadow-2xl shadow-pink-100 w-full object-cover aspect-[4/5] border-4 border-white" />
             </div>
           </div>
         </div>
@@ -326,7 +349,7 @@ export default function LandingPage() {
                 className="group cursor-pointer flex flex-col p-5 rounded-[40px] hover:bg-white transition-all duration-300 hover:shadow-[0_20px_40px_-10px_rgba(232,165,176,0.3)]"
               >
                 <div className="relative overflow-hidden mb-6 bg-pink-50 aspect-[4/5] rounded-[2rem] sm:rounded-[3rem]">
-                  <img src={product.imageUrl || 'https://via.placeholder.com/400x500?text=No+Image'} alt={product.name} className="object-cover w-full h-full transform group-hover:scale-105 transition duration-700 ease-out" />
+                  <img loading="lazy" src={product.imageUrl || 'https://via.placeholder.com/400x500?text=No+Image'} alt={product.name} className="object-cover w-full h-full transform group-hover:scale-105 transition duration-700 ease-out" />
                   <div className="absolute inset-0 bg-white/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-500 flex flex-col items-center justify-center space-y-3 p-4">
                     {product.shopeeLink && (
                       <a href={product.shopeeLink} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="bg-white text-[var(--color-brand-charcoal)] px-6 py-3 rounded-full text-xs uppercase tracking-[0.1em] hover:bg-accent hover:text-white transition shadow-sm w-40 text-center font-medium">Shopee</a>
@@ -358,14 +381,23 @@ export default function LandingPage() {
              </p>
           </div>
           <div className="relative rounded-[40px] overflow-hidden aspect-video shadow-2xl shadow-pink-100 group">
-             <img src={settings['videoImage'] || "https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&q=80&w=1600"} alt="Isti Beauty Video" className="w-full h-full object-cover transition duration-1000 group-hover:scale-105" />
+             <img loading="lazy" src={settings['videoImage'] || "https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&q=80&w=1600"} alt="Isti Beauty Video" className="w-full h-full object-cover transition duration-1000 group-hover:scale-105" />
              {settings['videoUrl'] ? (
-               <a href={settings['videoUrl']} target="_blank" rel="noreferrer" aria-label="Tonton Video" className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
-                 <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
-                   <Play className="text-white fill-current ml-2" size={40} />
-                 </div>
-                 <p className="text-white font-medium tracking-widest uppercase text-sm mt-8 drop-shadow-md">{settings['videoButton'] || 'Tonton Video Inspirasi Kami'}</p>
-               </a>
+               settings['videoUrl'].startsWith('data:') ? (
+                 <button onClick={() => setIsVideoModalOpen(true)} aria-label="Tonton Video" className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40 w-full h-full border-none">
+                   <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
+                     <Play className="text-white fill-current ml-2" size={40} />
+                   </div>
+                   <p className="text-white font-medium tracking-widest uppercase text-sm mt-8 drop-shadow-md">{settings['videoButton'] || 'Tonton Video Inspirasi Kami'}</p>
+                 </button>
+               ) : (
+                 <a href={settings['videoUrl']} target="_blank" rel="noreferrer" aria-label="Tonton Video" className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
+                   <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
+                     <Play className="text-white fill-current ml-2" size={40} />
+                   </div>
+                   <p className="text-white font-medium tracking-widest uppercase text-sm mt-8 drop-shadow-md">{settings['videoButton'] || 'Tonton Video Inspirasi Kami'}</p>
+                 </a>
+               )
              ) : (
                <div className="absolute inset-0 bg-[var(--color-brand-charcoal)]/30 flex flex-col items-center justify-center transition-colors group-hover:bg-[var(--color-brand-charcoal)]/40">
                  <div aria-hidden="true" className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-110">
@@ -397,7 +429,7 @@ export default function LandingPage() {
                  onClick={() => setSelectedArticle(article)}
                >
                  <div className="relative h-56 overflow-hidden">
-                   <img src={article.image} alt={article.title} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
+                   <img loading="lazy" src={article.image} alt={article.title} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
                    <div className="absolute top-4 left-4">
                      <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest text-[#d18895] font-semibold shadow-sm">{article.category}</span>
                    </div>
@@ -441,7 +473,7 @@ export default function LandingPage() {
               
               <div className="overflow-y-auto w-full custom-scrollbar">
                 <div className="w-full h-64 md:h-80 relative flex-shrink-0">
-                  <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
+                  <img loading="lazy" src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-brand-charcoal)]/80 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 p-8 md:p-12 w-full">
                     <span className="bg-accent/80 text-white backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-semibold mb-4 inline-block">{selectedArticle.category}</span>
@@ -468,6 +500,41 @@ export default function LandingPage() {
                 </div>
                 
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Modal */}
+      <AnimatePresence>
+        {isVideoModalOpen && settings['videoUrl'] && settings['videoUrl'].startsWith('data:') && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-2xl bg-black"
+            >
+              <button 
+                onClick={() => setIsVideoModalOpen(false)}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <video 
+                src={settings['videoUrl']} 
+                controls 
+                autoPlay 
+                className="w-full h-auto max-h-[85vh]"
+                controlsList="nodownload"
+              />
             </motion.div>
           </motion.div>
         )}

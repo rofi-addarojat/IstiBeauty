@@ -84,6 +84,59 @@ export const ImageInput = ({ value, onChange, placeholder = "https://..." }: { v
   );
 };
 
+export const VideoInput = ({ value, onChange, placeholder = "https://..." }: { value: string, onChange: (val: string) => void, placeholder?: string }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check file size (e.g. limit to 2MB since Firestore limit is 1MB, let's limit to 700KB to be safe)
+    if (file.size > 800000) {
+      alert("Ukuran video terlalu besar. Maksimal 800KB untuk upload langsung ke database.");
+      return;
+    }
+    
+    setLoading(true);
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      onChange(event.target?.result as string);
+      setLoading(false);
+    };
+    reader.onerror = (error) => {
+      console.error(error);
+      alert('Gagal memproses video');
+      setLoading(false);
+    };
+  };
+
+  return (
+    <div className="space-y-2">
+      <input 
+        type="text" 
+        value={value || ''} 
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-gray-300 rounded-md p-2 text-sm text-[var(--color-brand-charcoal)]"
+      />
+      <div className="flex flex-col space-y-1">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-500">Atau upload video:</span>
+          <input 
+            type="file" 
+            accept="video/*" 
+            onChange={handleFileChange}
+            className="text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+          />
+          {loading && <span className="text-xs text-blue-500 font-medium">Memproses...</span>}
+        </div>
+        <span className="text-[10px] text-orange-400 font-medium">*Upload video maksimal 800KB. Gunakan URL Youtube/Tiktok jika video lebih besar.</span>
+      </div>
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { user, loginWithGoogle, logout, loading } = useAuth();
   
@@ -104,13 +157,22 @@ export default function AdminDashboard() {
     const unsubSettings = onSnapshot(qSettings, (snap) => {
       snap.docs.forEach(doc => {
         if (doc.id === 'faviconUrl') {
-          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          let link = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+          if (!link) {
+            link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          }
           if (!link) {
             link = document.createElement('link');
             link.rel = 'icon';
             document.head.appendChild(link);
           }
           link.href = doc.data().value;
+        }
+        if (doc.id === 'ogImageUrl') {
+          const ogImage = document.getElementById("og-image") as HTMLMetaElement;
+          if (ogImage) ogImage.content = doc.data().value;
+          const twitterImage = document.getElementById("twitter-image") as HTMLMetaElement;
+          if (twitterImage) twitterImage.content = doc.data().value;
         }
         if (doc.id === 'logoName') {
           document.title = doc.data().value;
@@ -501,6 +563,16 @@ export default function AdminDashboard() {
                     }} 
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Gambar Share / OG Image (Untuk Tautan Sosial Media)</label>
+                  <ImageInput 
+                    value={settings['ogImageUrl']} 
+                    onChange={(val) => {
+                      setSettings({...settings, ogImageUrl: val});
+                      saveSetting('ogImageUrl', val);
+                    }} 
+                  />
+                </div>
                 <p className="text-xs text-gray-500 mt-2">*Perubahan langsung tersimpan otomatis.</p>
               </div>
             </div>
@@ -593,8 +665,14 @@ export default function AdminDashboard() {
                     <input type="text" value={settings['videoSubtitle'] || ''} onChange={(e) => setSettings({...settings, videoSubtitle: e.target.value})} onBlur={(e) => saveSetting('videoSubtitle', e.target.value)} className="w-full border rounded p-2 text-sm" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Video URL (Kosongkan jika hanya gambar)</label>
-                    <input type="text" value={settings['videoUrl'] || ''} onChange={(e) => setSettings({...settings, videoUrl: e.target.value})} onBlur={(e) => saveSetting('videoUrl', e.target.value)} className="w-full border rounded p-2 text-sm" />
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Video (URL / Upload)</label>
+                    <VideoInput 
+                      value={settings['videoUrl']} 
+                      onChange={(val) => {
+                        setSettings({...settings, videoUrl: val});
+                        saveSetting('videoUrl', val);
+                      }} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Testimoni Title</label>
