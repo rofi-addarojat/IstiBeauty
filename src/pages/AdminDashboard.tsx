@@ -3,6 +3,87 @@ import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, onSnapshot, query, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
 
+export const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const max_size = 800; // max width/height
+
+        if (width > height) {
+          if (width > max_size) {
+            height *= max_size / width;
+            width = max_size;
+          }
+        } else {
+          if (height > max_size) {
+            width *= max_size / height;
+            height = max_size;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+export const ImageInput = ({ value, onChange, placeholder = "https://..." }: { value: string, onChange: (val: string) => void, placeholder?: string }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const base64 = await compressImage(file);
+      onChange(base64);
+    } catch (err) {
+      console.error(err);
+      alert('Gagal memproses gambar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <input 
+        type="text" 
+        value={value || ''} 
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-gray-300 rounded-md p-2 text-sm text-[var(--color-brand-charcoal)]"
+      />
+      <div className="flex items-center space-x-2">
+        <span className="text-xs text-gray-500">Atau upload gambar:</span>
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={handleFileChange}
+          className="text-xs text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+        />
+        {loading && <span className="text-xs text-blue-500 font-medium">Memproses...</span>}
+      </div>
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { user, loginWithGoogle, logout, loading } = useAuth();
   
@@ -14,6 +95,8 @@ export default function AdminDashboard() {
   const [articles, setArticles] = useState<any[]>([]);
   const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', text: '', rating: 5 });
+  const [productImage, setProductImage] = useState('');
+  const [articleImage, setArticleImage] = useState('');
 
   useEffect(() => {
     // Dynamic Favicon and Title
@@ -118,6 +201,7 @@ export default function AdminDashboard() {
         tokpedLink: formData.get('tokpedLink')
       });
       form.reset();
+      setProductImage('');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'products');
     }
@@ -211,6 +295,7 @@ export default function AdminDashboard() {
         content: formData.get('content'),
       });
       form.reset();
+      setArticleImage('');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'articles');
     }
@@ -408,12 +493,12 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Favicon URL (Gambar kecil di Tab Browser)</label>
-                  <input 
-                    type="text" 
-                    value={settings['faviconUrl'] || ''} 
-                    onChange={(e) => setSettings({...settings, faviconUrl: e.target.value})}
-                    onBlur={(e) => saveSetting('faviconUrl', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md p-2"
+                  <ImageInput 
+                    value={settings['faviconUrl']} 
+                    onChange={(val) => {
+                      setSettings({...settings, faviconUrl: val});
+                      saveSetting('faviconUrl', val);
+                    }} 
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">*Perubahan langsung tersimpan otomatis.</p>
@@ -469,8 +554,14 @@ export default function AdminDashboard() {
                     <textarea value={settings['manfaatDesc'] || ''} onChange={(e) => setSettings({...settings, manfaatDesc: e.target.value})} onBlur={(e) => saveSetting('manfaatDesc', e.target.value)} className="w-full border rounded p-2 text-sm h-16" placeholder="Dengan pemakaian rutin..." />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">URL Gambar Samping</label>
-                    <input type="text" value={settings['manfaatImage'] || ''} onChange={(e) => setSettings({...settings, manfaatImage: e.target.value})} onBlur={(e) => saveSetting('manfaatImage', e.target.value)} className="w-full border rounded p-2 text-sm" />
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Gambar Samping (Opsional)</label>
+                    <ImageInput 
+                      value={settings['manfaatImage']} 
+                      onChange={(val) => {
+                        setSettings({...settings, manfaatImage: val});
+                        saveSetting('manfaatImage', val);
+                      }} 
+                    />
                   </div>
                   <div className="md:col-span-2 space-y-2 mt-2">
                     <label className="block text-xs font-medium text-gray-700">4 Poin Manfaat</label>
@@ -536,8 +627,9 @@ export default function AdminDashboard() {
                     <input name="price" type="number" required className="w-full border rounded p-2" />
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-xs text-gray-500 mb-1">URL Gambar (http...)</label>
-                    <input name="imageUrl" required className="w-full border rounded p-2" />
+                    <label className="block text-xs text-gray-500 mb-1">Gambar Produk</label>
+                    <ImageInput value={productImage} onChange={setProductImage} />
+                    <input type="hidden" name="imageUrl" value={productImage} />
                   </div>
                   <div className="col-span-2 md:col-span-1">
                     <label className="block text-xs text-gray-500 mb-1">Link Shopee</label>
@@ -733,8 +825,9 @@ export default function AdminDashboard() {
                      <input name="category" required className="w-full border rounded p-2 text-sm" />
                    </div>
                    <div className="col-span-2">
-                     <label className="block text-xs text-gray-500 mb-1">URL Cover / Gambar</label>
-                     <input name="image" required className="w-full border rounded p-2 text-sm" />
+                     <label className="block text-xs text-gray-500 mb-1">Gambar Artikel</label>
+                     <ImageInput value={articleImage} onChange={setArticleImage} />
+                     <input type="hidden" name="image" value={articleImage} />
                    </div>
                    <div className="col-span-2">
                      <label className="block text-xs text-gray-500 mb-1">Konten Artikel</label>
