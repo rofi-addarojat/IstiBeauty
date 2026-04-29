@@ -1,11 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, collection, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, query } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, collection, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, query, initializeFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, firebaseConfig.firestoreDatabaseId);
 
 export enum OperationType {
   CREATE = 'create',

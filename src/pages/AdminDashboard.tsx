@@ -91,9 +91,9 @@ export const VideoInput = ({ value, onChange, placeholder = "https://..." }: { v
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file size (e.g. limit to 2MB since Firestore limit is 1MB, let's limit to 700KB to be safe)
-    if (file.size > 800000) {
-      alert("Ukuran video terlalu besar. Maksimal 800KB untuk upload langsung ke database.");
+    // Check file size limit to 5MB
+    if (file.size > 5000000) {
+      alert("Ukuran video terlalu besar. Maksimal 5MB untuk upload langsung ke database.");
       return;
     }
     
@@ -131,7 +131,7 @@ export const VideoInput = ({ value, onChange, placeholder = "https://..." }: { v
           />
           {loading && <span className="text-xs text-blue-500 font-medium">Memproses...</span>}
         </div>
-        <span className="text-[10px] text-orange-400 font-medium">*Upload video maksimal 800KB. Gunakan URL Youtube/Tiktok jika video lebih besar.</span>
+        <span className="text-[10px] text-orange-400 font-medium">*Upload video maksimal 5MB. Gunakan URL Youtube/Tiktok jika video lebih besar.</span>
       </div>
     </div>
   );
@@ -148,6 +148,9 @@ export default function AdminDashboard() {
   const [articles, setArticles] = useState<any[]>([]);
   const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', text: '', rating: 5 });
+  const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
+  const [editArticleForm, setEditArticleForm] = useState({ title: '', category: '', content: '' });
+  const [editArticleImage, setEditArticleImage] = useState('');
   const [productImage, setProductImage] = useState('');
   const [articleImage, setArticleImage] = useState('');
 
@@ -189,9 +192,29 @@ export default function AdminDashboard() {
     // Fetch Settings
     const unsubSettings = onSnapshot(query(collection(db, 'settings')), (snap) => {
       const newSettings: Record<string, string> = {};
+      const chunkedSettings: Record<string, { totalChunks: number, chunks: string[] }> = {};
+
       snap.docs.forEach(doc => {
-        newSettings[doc.id] = doc.data().value;
+        const id = doc.id;
+        const data = doc.data();
+        if (data.totalChunks) {
+          chunkedSettings[id] = { totalChunks: data.totalChunks, chunks: chunkedSettings[id]?.chunks || [] };
+        } else if (id.includes('_chunk_')) {
+          const [baseKey, , chunkIndexStr] = id.split('_');
+          const chunkIndex = parseInt(chunkIndexStr);
+          if (!chunkedSettings[baseKey]) chunkedSettings[baseKey] = { totalChunks: 0, chunks: [] };
+          chunkedSettings[baseKey].chunks[chunkIndex] = data.value;
+        } else {
+          newSettings[id] = data.value;
+        }
       });
+
+      for (const [key, meta] of Object.entries(chunkedSettings)) {
+        if (meta.totalChunks > 0 && meta.chunks.length === meta.totalChunks && !meta.chunks.includes(undefined as any)) {
+          newSettings[key] = meta.chunks.join('');
+        }
+      }
+
       setSettings(newSettings);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'settings'));
 
@@ -242,7 +265,17 @@ export default function AdminDashboard() {
 
   const saveSetting = async (key: string, value: string) => {
     try {
-      await setDoc(doc(db, 'settings', key), { value });
+      if (value.length > 800000) {
+        const CHUNK_SIZE = 800000;
+        const totalChunks = Math.ceil(value.length / CHUNK_SIZE);
+        await setDoc(doc(db, 'settings', key), { value: 'chunked', totalChunks });
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          await setDoc(doc(db, 'settings', `${key}_chunk_${i}`), { value: chunk });
+        }
+      } else {
+        await setDoc(doc(db, 'settings', key), { value });
+      }
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `settings/${key}`);
     }
@@ -369,6 +402,22 @@ export default function AdminDashboard() {
       await deleteDoc(doc(db, 'articles', id));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `articles/${id}`);
+    }
+  };
+
+  const startEditArticle = (a: any) => {
+    setEditingArticleId(a.id);
+    setEditArticleForm({ title: a.title, category: a.category, content: a.content });
+    setEditArticleImage(a.image || '');
+  };
+
+  const saveEditArticle = async () => {
+    if (!editingArticleId) return;
+    try {
+      await setDoc(doc(db, 'articles', editingArticleId), { ...editArticleForm, image: editArticleImage }, { merge: true });
+      setEditingArticleId(null);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `articles/${editingArticleId}`);
     }
   };
 
@@ -919,19 +968,37 @@ export default function AdminDashboard() {
                  </form>
                </div>
 
-               <div className="bg-white p-6 rounded shadow-sm border border-gray-100">
+                <div className="bg-white p-6 rounded shadow-sm border border-gray-100">
                  <h2 className="text-sm font-medium text-gray-900 mb-6 uppercase tracking-widest">Daftar Artikel</h2>
                  <div className="space-y-4">
                     {articles.map(a => (
-                      <div key={a.id} className="border rounded p-4 flex justify-between items-center">
-                         <div className="flex items-center space-x-4">
-                           <img src={a.image} className="w-16 h-16 object-cover rounded" alt="" />
-                           <div>
-                             <h4 className="font-medium text-sm mb-1">{a.title}</h4>
-                             <p className="text-xs text-gray-500">{a.category}</p>
+                      <div key={a.id} className="border rounded p-4 flex flex-col space-y-4">
+                         {editingArticleId === a.id ? (
+                           <div className="flex flex-col space-y-2">
+                             <input type="text" value={editArticleForm.title} onChange={(e) => setEditArticleForm({...editArticleForm, title: e.target.value})} className="border rounded p-1 text-sm bg-white" placeholder="Judul Artikel" />
+                             <input type="text" value={editArticleForm.category} onChange={(e) => setEditArticleForm({...editArticleForm, category: e.target.value})} className="border rounded p-1 text-sm bg-white" placeholder="Kategori" />
+                             <ImageInput value={editArticleImage} onChange={setEditArticleImage} placeholder="Gambar Artikel" />
+                             <textarea value={editArticleForm.content} onChange={(e) => setEditArticleForm({...editArticleForm, content: e.target.value})} className="border rounded p-1 text-sm w-full h-24 bg-white" placeholder="Konten Artikel" />
+                             <div className="flex space-x-2">
+                               <button onClick={saveEditArticle} className="bg-green-600 text-white px-3 py-1 rounded text-xs">Simpan</button>
+                               <button onClick={() => setEditingArticleId(null)} className="bg-gray-400 text-white px-3 py-1 rounded text-xs">Batal</button>
+                             </div>
                            </div>
-                         </div>
-                         <button onClick={() => deleteArticle(a.id)} className="text-sm text-red-600">Hapus</button>
+                         ) : (
+                           <div className="flex justify-between items-center w-full">
+                             <div className="flex items-center space-x-4">
+                               <img src={a.image} className="w-16 h-16 object-cover rounded" alt="" />
+                               <div>
+                                 <h4 className="font-medium text-sm mb-1">{a.title}</h4>
+                                 <p className="text-xs text-gray-500">{a.category}</p>
+                               </div>
+                             </div>
+                             <div className="flex space-x-3">
+                               <button onClick={() => startEditArticle(a)} className="text-sm text-blue-600 hover:underline">Edit</button>
+                               <button onClick={() => deleteArticle(a.id)} className="text-sm text-red-600 hover:underline">Hapus</button>
+                             </div>
+                           </div>
+                         )}
                       </div>
                     ))}
                     {articles.length === 0 && <p className="text-sm text-gray-500">Belum ada Artikel</p>}

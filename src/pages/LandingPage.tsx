@@ -42,9 +42,29 @@ export default function LandingPage() {
     const qSettings = query(collection(db, 'settings'));
     const unsubSettings = onSnapshot(qSettings, (snap) => {
       const newSettings: Record<string, string> = {};
+      const chunkedSettings: Record<string, { totalChunks: number, chunks: string[] }> = {};
+
       snap.docs.forEach(doc => {
-        newSettings[doc.id] = doc.data().value;
+        const id = doc.id;
+        const data = doc.data();
+        if (data.totalChunks) {
+          chunkedSettings[id] = { totalChunks: data.totalChunks, chunks: chunkedSettings[id]?.chunks || [] };
+        } else if (id.includes('_chunk_')) {
+          const [baseKey, , chunkIndexStr] = id.split('_');
+          const chunkIndex = parseInt(chunkIndexStr);
+          if (!chunkedSettings[baseKey]) chunkedSettings[baseKey] = { totalChunks: 0, chunks: [] };
+          chunkedSettings[baseKey].chunks[chunkIndex] = data.value;
+        } else {
+          newSettings[id] = data.value;
+        }
       });
+
+      for (const [key, meta] of Object.entries(chunkedSettings)) {
+        if (meta.totalChunks > 0 && meta.chunks.length === meta.totalChunks && !meta.chunks.includes(undefined as any)) {
+          newSettings[key] = meta.chunks.join('');
+        }
+      }
+
       setSettings(newSettings);
 
       if (newSettings['logoName']) document.title = newSettings['logoName'];
